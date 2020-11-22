@@ -7,13 +7,13 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
-// KVStoreApplication : world
+// KVStoreApplication : application struct
 type KVStoreApplication struct {
 	db           *badger.DB
 	currentBatch *badger.Txn
 }
 
-// NewKVStoreApplication : Hello
+// NewKVStoreApplication : function to initialize the application
 func NewKVStoreApplication(db *badger.DB) *KVStoreApplication {
 	return &KVStoreApplication{
 		db: db,
@@ -22,22 +22,22 @@ func NewKVStoreApplication(db *badger.DB) *KVStoreApplication {
 
 var _ abcitypes.Application = (*KVStoreApplication)(nil)
 
-//EndBlock : Hello
+//EndBlock : required
 func (KVStoreApplication) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	return abcitypes.ResponseEndBlock{}
 }
 
-//Info : Hello
+//Info : required
 func (KVStoreApplication) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 	return abcitypes.ResponseInfo{}
 }
 
-//InitChain : Hello
+//InitChain : required
 func (KVStoreApplication) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 	return abcitypes.ResponseInitChain{}
 }
 
-//SetOption : Hello
+//SetOption : required
 func (KVStoreApplication) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
 	return abcitypes.ResponseSetOption{}
 }
@@ -47,21 +47,22 @@ func (KVStoreApplication) ListSnapshots(abcitypes.RequestListSnapshots) abcitype
 	return abcitypes.ResponseListSnapshots{}
 }
 
-//OfferSnapshot : Hello
+//OfferSnapshot : required
 func (KVStoreApplication) OfferSnapshot(abcitypes.RequestOfferSnapshot) abcitypes.ResponseOfferSnapshot {
 	return abcitypes.ResponseOfferSnapshot{}
 }
 
-//LoadSnapshotChunk : Hello
+//LoadSnapshotChunk : required
 func (KVStoreApplication) LoadSnapshotChunk(abcitypes.RequestLoadSnapshotChunk) abcitypes.ResponseLoadSnapshotChunk {
 	return abcitypes.ResponseLoadSnapshotChunk{}
 }
 
-//ApplySnapshotChunk : Hello
+//ApplySnapshotChunk : required
 func (KVStoreApplication) ApplySnapshotChunk(abcitypes.RequestApplySnapshotChunk) abcitypes.ResponseApplySnapshotChunk {
 	return abcitypes.ResponseApplySnapshotChunk{}
 }
 
+// this function is used to check the validity of the transactions which are broadcasted
 func (app *KVStoreApplication) isValid(tx []byte) (code uint32) {
 	// check format
 	parts := bytes.Split(tx, []byte("="))
@@ -94,19 +95,22 @@ func (app *KVStoreApplication) isValid(tx []byte) (code uint32) {
 	return code
 }
 
-// CheckTx : Hello
+// CheckTx : This is the checktx message type. it is the checktx duty to do the validation of the transactions
+// in the application side
 func (app *KVStoreApplication) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 	code := app.isValid(req.Tx)
 	return abcitypes.ResponseCheckTx{Code: code, GasWanted: 1}
 }
 
-// BeginBlock : Hello
+// BeginBlock : using begin block we will specify the app that new block is added in the blockchain
+// by the tendermint core
 func (app *KVStoreApplication) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
 	app.currentBatch = app.db.NewTransaction(true)
 	return abcitypes.ResponseBeginBlock{}
 }
 
-// DeliverTx : Hello
+// DeliverTx : this message type is used to send the message to the application by the tendermint core
+// and the application will receive the transactions added.
 func (app *KVStoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 	code := app.isValid(req.Tx)
 	if code != 0 {
@@ -124,13 +128,13 @@ func (app *KVStoreApplication) DeliverTx(req abcitypes.RequestDeliverTx) abcityp
 	return abcitypes.ResponseDeliverTx{Code: 0}
 }
 
-// Commit : Hello
+// Commit : this is used to commit the new block by the application
 func (app *KVStoreApplication) Commit() abcitypes.ResponseCommit {
 	app.currentBatch.Commit()
 	return abcitypes.ResponseCommit{Data: []byte{}}
 }
 
-// Query : Hello
+// Query : this is the function to make query by the client
 func (app *KVStoreApplication) Query(reqQuery abcitypes.RequestQuery) (resQuery abcitypes.ResponseQuery) {
 	resQuery.Key = reqQuery.Data
 	err := app.db.View(func(txn *badger.Txn) error {
